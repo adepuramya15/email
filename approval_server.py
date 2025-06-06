@@ -38,7 +38,7 @@ def approve():
     threading.Timer(300.0, lambda: save_status("pending")).start()
     return render_template_string("""
         <h2 style="color: green;">✅ Pipeline Approved</h2>
-        <p>Status will reset to pending after 5 minutes.</p>
+        <p>You’re all set! The approval will expire in 5 minutes and reset.</p>
     """)
 
 @app.route('/reject')
