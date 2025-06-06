@@ -1,114 +1,97 @@
-import json
 import smtplib
-import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import requests
+import time
 import sys
 
-# Configurations
-sender_email = "yaswanthkumarch2001@gmail.com"
-receiver_email = "ramya@middlewaretalents.com"
-password = "uqjc bszf djfw bsor"  # App Password only
-pipeline_id = "123"
-status_file = "approval_status.json"
-base_url = "https://64ef-136-232-205-158.ngrok-free.app"
-timeout = 120  # 2 minutes wait for approval
+# === CONFIGURATION ===
+smtp_user = "yaswanthkumarch2001@gmail.com"
+smtp_password = "uqjcbszfdjfwbsor"  # Use Gmail App Password (no spaces)
+to_email = "ramya@middlewaretalents.com"
+public_url = "https://64ef-136-232-205-158.ngrok-free.app"  # Your Flask app ngrok URL
 
-# Step 1: Write initial status
-status_data = {"pipeline_id": pipeline_id, "status": "pending"}
-with open(status_file, "w") as f:
-    json.dump(status_data, f, indent=2)
+# Flask endpoint URLs
+status_url = f"{public_url}/status"
+approve_url = f"{public_url}/approve"
+reject_url = f"{public_url}/reject"
+reset_url = f"{public_url}/reset"
 
-# Step 2: Email content with approval/rejection buttons
-approve_url = f"{base_url}/approve?pipeline_id={pipeline_id}"
-reject_url = f"{base_url}/reject?pipeline_id={pipeline_id}"
+# === Reset status to "pending" at the beginning ===
+try:
+    requests.post(reset_url)
+    print("🔄 Initial status reset to pending.")
+except Exception as e:
+    print("❌ Failed to reset status:", e)
+    sys.exit(1)
 
-plain_text = f"""
-Pipeline Approval Needed
-
-Status: Pending
-
-Click below to respond:
-
-Approve: {approve_url}
-Reject: {reject_url}
-"""
-
+# === Compose the email ===
+subject = "Harness Pipeline Approval Needed"
 html_body = f"""
 <html>
-  <body>
+  <body style="font-family: Arial;">
     <p>Hi,<br><br>
-       Please approve the pending pipeline run.<br><br>
-       <b>Status:</b> Pending<br><br>
-       <a href="{approve_url}" style="
-         background-color: #4CAF50;
-         color: white;
-         padding: 10px 20px;
-         text-decoration: none;
-         border-radius: 5px;">Approve</a>&nbsp;&nbsp;
-       <a href="{reject_url}" style="
-         background-color: #f44336;
-         color: white;
-         padding: 10px 20px;
-         text-decoration: none;
-         border-radius: 5px;">Reject</a><br><br>
-       Thanks.
+       Please review and take action on the pipeline.<br><br>
+       <a href="{approve_url}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none;">Approve</a>
+       &nbsp;
+       <a href="{reject_url}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none;">Reject</a><br><br>
+       Thanks,<br>CI Bot
     </p>
   </body>
 </html>
 """
 
-# Step 3: Send Email
-message = MIMEMultipart("alternative")
-message["From"] = sender_email
-message["To"] = receiver_email
-message["Subject"] = "Harness Approval Needed"
-message.attach(MIMEText(plain_text, "plain"))
-message.attach(MIMEText(html_body, "html"))
+msg = MIMEMultipart('alternative')
+msg['From'] = smtp_user
+msg['To'] = to_email
+msg['Subject'] = subject
+msg.attach(MIMEText(html_body, 'html'))
 
+# === Send Email ===
 try:
-    server = smtplib.SMTP("smtp.gmail.com", 587)
+    print("📧 Sending email...")
+    server = smtplib.SMTP('smtp.gmail.com', 587)
     server.starttls()
-    server.login(sender_email, password)
-    server.sendmail(sender_email, receiver_email, message.as_string())
+    server.login(smtp_user, smtp_password)
+    server.sendmail(smtp_user, to_email, msg.as_string())
     server.quit()
-    print("✅ Email sent successfully!")
+    print("✅ Email sent.")
 except Exception as e:
-    print(f"❌ Failed to send email: {e}")
+    print("❌ Failed to send email:", e)
     sys.exit(1)
 
-# Step 4: Wait for approval/rejection
-print("⏳ Waiting for user action (up to 2 minutes)...")
-start_time = time.time()
-final_status = "pending"
-
-while time.time() - start_time < timeout:
+# === Poll for Approval ===
+print("⏳ Waiting for approval (10 minutes max)...")
+for i in range(60):  # Poll every 10 seconds (60 × 10s = 10 min)
     try:
-        with open(status_file) as f:
-            current_status = json.load(f).get("status", "pending")
-        if current_status in ["approved", "rejected"]:
-            print(f"✅ Status received: {current_status.upper()}")
-            final_status = current_status
-            break
-    except Exception as e:
-        print(f"⚠️ Warning reading status: {e}")
-    time.sleep(5)
+        res = requests.get(status_url)
+        res.raise_for_status()
+        data = res.json()
+        status = data.get("status", "").lower()
 
-if final_status == "pending":
-    print("⚠️ No response received within 2 minutes. Timeout.")
-    sys.exit(2)  # Exit with code 2 on timeout
+        if status in ["approved", "rejected"]:
+            print(f"🔔 Pipeline {status.upper()} received.")
 
-# Step 5: Exit based on approval status
-if final_status == "approved":
-    print("✅ Approval granted. Proceeding.")
-    sys.exit(0)  # Success exit code
-elif final_status == "rejected":
-    print("❌ Approval rejected. Exiting with failure.")
-    sys.exit(3)  # Failure exit code
+            # Reset again after response
+            try:
+                requests.post(reset_url)
+                print("🔄 Status reset to pending.")
+            except Exception as e:
+                print("⚠️ Failed to reset after response:", e)
 
-# Optional: Reset status after 2 mins if needed (can remove this if not required)
-#print("⏳ Waiting 2 minutes before resetting status...")
-#time.sleep(120)
-#with open(status_file, "w") as f:
-#    json.dump({"pipeline_id": pipeline_id, "status": "pending"}, f, indent=2)
-#print("🔄 Status reset to 'pending'.")
+            if status == "approved":
+                print("✅ Proceeding with pipeline...")
+                sys.exit(0)
+            else:
+                print("🛑 Pipeline rejected.")
+                sys.exit(1)
+        else:
+            print(f"⌛ Current status: {status}. Waiting...")
+    except Exception as err:
+        print(f"🔁 Poll {i+1}/60 failed:", err)
+
+    time.sleep(10)
+
+# Timeout after 10 minutes
+print("⌛ Timeout reached. No approval received.")
+sys.exit(2)

@@ -1,60 +1,66 @@
-from flask import Flask, request, jsonify, abort
+from flask import Flask, render_template_string, jsonify, request
+import threading
+import time
 import json
 import os
 
 app = Flask(__name__)
-STATUS_FILE = "approval_status.json"
+status_file = "approval_status.json"
+lock = threading.Lock()
 
-def update_status(pipeline_id, new_status):
-    data = {
-        "pipeline_id": pipeline_id,
-        "status": new_status
-    }
-    with open(STATUS_FILE, "w") as f:
-        json.dump(data, f, indent=2)
-    app.logger.info(f"Updated status to '{new_status}' for pipeline_id={pipeline_id}")
+# === Load or initialize status ===
+def load_status():
+    if os.path.exists(status_file):
+        try:
+            with open(status_file, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"⚠️ Failed to read status: {e}")
+    return {"status": "pending"}
 
-@app.route("/approve")
+def save_status(new_status):
+    with lock:
+        try:
+            with open(status_file, "w") as f:
+                json.dump({"status": new_status}, f)
+            print(f"🔁 Status updated to: {new_status}")
+        except Exception as e:
+            print(f"❌ Failed to write status: {e}")
+
+@app.route('/')
+def index():
+    return "✅ Approval server is running."
+
+@app.route('/approve')
 def approve():
-    pipeline_id = request.args.get("pipeline_id")
-    if not pipeline_id:
-        return jsonify({"error": "Missing pipeline_id"}), 400
+    save_status("approved")
+    print("🔔 Approved. Resetting to pending in 5 minutes...")
+    threading.Timer(300.0, lambda: save_status("pending")).start()
+    return render_template_string("""
+        <h2 style="color: green;">✅ Pipeline Approved</h2>
+        <p>Status will reset to pending after 5 minutes.</p>
+    """)
 
-    update_status(pipeline_id, "approved")
-    return f"""
-    <html>
-        <body>
-            <h2>You approved pipeline ID {pipeline_id}</h2>
-            <p>You can now return to the pipeline system.</p>
-        </body>
-    </html>
-    """
-
-@app.route("/reject")
+@app.route('/reject')
 def reject():
-    pipeline_id = request.args.get("pipeline_id")
-    if not pipeline_id:
-        return jsonify({"error": "Missing pipeline_id"}), 400
+    save_status("rejected")
+    print("❌ Rejected. Resetting to pending in 5 minutes...")
+    threading.Timer(300.0, lambda: save_status("pending")).start()
+    return render_template_string("""
+        <h2 style="color: red;">❌ Pipeline Rejected</h2>
+        <p>Status will reset to pending after 5 minutes.</p>
+    """)
 
-    update_status(pipeline_id, "rejected")
-    return f"""
-    <html>
-        <body>
-            <h2>You rejected pipeline ID {pipeline_id}</h2>
-            <p>You can now return to the pipeline system.</p>
-        </body>
-    </html>
-    """
-
-@app.route("/status")
+@app.route('/status')
 def status():
-    # Optional: API to check current status
-    if os.path.exists(STATUS_FILE):
-        with open(STATUS_FILE) as f:
-            data = json.load(f)
-        return jsonify(data)
-    return jsonify({"error": "Status not found"}), 404
+    current = load_status()
+    return jsonify(current)
+
+@app.route('/reset', methods=['POST'])
+def reset():
+    save_status("pending")
+    return "🔄 Status manually reset to pending.", 200
 
 if __name__ == "__main__":
-    # Bind to all IPs so ngrok or external services can reach it
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    save_status("pending")  # Ensure initial state
+    app.run(host="0.0.0.0", port=5000)
