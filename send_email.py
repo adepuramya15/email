@@ -3,6 +3,7 @@ import smtplib
 import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import sys
 
 # Configurations
 sender_email = "yaswanthkumarch2001@gmail.com"
@@ -74,7 +75,7 @@ try:
     print("✅ Email sent successfully!")
 except Exception as e:
     print(f"❌ Failed to send email: {e}")
-    exit(1)
+    sys.exit(1)
 
 # Step 4: Wait for approval/rejection
 print("⏳ Waiting for user action (up to 2 minutes)...")
@@ -90,16 +91,24 @@ while time.time() - start_time < timeout:
             final_status = current_status
             break
     except Exception as e:
-        print(f"Warning reading status: {e}")
+        print(f"⚠️ Warning reading status: {e}")
     time.sleep(5)
 
 if final_status == "pending":
     print("⚠️ No response received within 2 minutes. Timeout.")
+    sys.exit(2)  # Exit with code 2 on timeout
 
-# Step 5: Reset status to pending after 2 minutes
-print("⏳ Waiting 2 minutes before resetting status...")
-time.sleep(120)
+# Step 5: Exit based on approval status
+if final_status == "approved":
+    print("✅ Approval granted. Proceeding.")
+    sys.exit(0)  # Success exit code
+elif final_status == "rejected":
+    print("❌ Approval rejected. Exiting with failure.")
+    sys.exit(3)  # Failure exit code
 
-with open(status_file, "w") as f:
-    json.dump({"pipeline_id": pipeline_id, "status": "pending"}, f, indent=2)
-print("🔄 Status reset to 'pending'.")
+# Optional: Reset status after 2 mins if needed (can remove this if not required)
+#print("⏳ Waiting 2 minutes before resetting status...")
+#time.sleep(120)
+#with open(status_file, "w") as f:
+#    json.dump({"pipeline_id": pipeline_id, "status": "pending"}, f, indent=2)
+#print("🔄 Status reset to 'pending'.")
