@@ -26,17 +26,36 @@ except Exception as e:
     sys.exit(1)
 
 # === Compose the email ===
-subject = "Harness Pipeline Approval Needed"
+subject = "Action Required: Harness Pipeline Approval"
+
 html_body = f"""
 <html>
-  <body style="font-family: Arial;">
-    <p>Hi,<br><br>
-       Please review and take action on the pipeline.<br><br>
-       <a href="{approve_url}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none;">Approve</a>
-       &nbsp;
-       <a href="{reject_url}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none;">Reject</a><br><br>
-       Thanks,<br>CI Bot
-    </p>
+  <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px;">
+      <h2 style="color: #333333;">🚀 Pipeline Action Required</h2>
+      <p style="font-size: 15px; color: #444444;">
+        Hello,<br><br>
+        A new pipeline execution is waiting for your response.<br>
+        Please select one of the options below to continue:
+      </p>
+
+      <div style="margin: 30px 0;">
+        <a href="{approve_url}" 
+           style="padding: 12px 25px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+          ✅ Approve
+        </a>
+        &nbsp;&nbsp;
+        <a href="{reject_url}" 
+           style="padding: 12px 25px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+          ❌ Reject
+        </a>
+      </div>
+
+      <p style="font-size: 14px; color: #666666;">
+        Thank you,<br>
+        <strong>CI/CD Automation Bot</strong>
+      </p>
+    </div>
   </body>
 </html>
 """
