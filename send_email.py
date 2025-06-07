@@ -9,7 +9,7 @@ import sys
 smtp_user = "yaswanthkumarch2001@gmail.com"
 smtp_password = "uqjcbszfdjfwbsor"  # Use Gmail App Password (no spaces)
 to_email = "ramya@middlewaretalents.com"
-public_url = "https://64ef-136-232-205-158.ngrok-free.app"  # Your Flask app ngrok URL
+public_url = "https://dfa3-136-232-205-158.ngrok-free.app"  # Your Flask app ngrok URL
 
 # Flask endpoint URLs
 status_url = f"{public_url}/status"
