@@ -4,6 +4,7 @@ from email.mime.multipart import MIMEMultipart
 import requests
 import time
 import sys
+import uuid
 
 # === CONFIGURATION ===
 smtp_user = "yaswanthkumarch2001@gmail.com"
@@ -11,16 +12,19 @@ smtp_password = "uqjcbszfdjfwbsor"  # Use Gmail App Password (no spaces)
 to_email = "ramya@middlewaretalents.com"
 public_url = "https://dfa3-136-232-205-158.ngrok-free.app"  # Your Flask app ngrok URL
 
-# Flask endpoint URLs
-status_url = f"{public_url}/status"
-approve_url = f"{public_url}/approve"
-reject_url = f"{public_url}/reject"
-reset_url = f"{public_url}/reset"
+# === Generate unique pipeline ID ===
+pipeline_id = str(uuid.uuid4())
 
-# === Reset status to "pending" at the beginning ===
+# Flask endpoint URLs with pipeline_id query param
+status_url = f"{public_url}/status?pipeline_id={pipeline_id}"
+approve_url = f"{public_url}/approve?pipeline_id={pipeline_id}"
+reject_url = f"{public_url}/reject?pipeline_id={pipeline_id}"
+reset_url = f"{public_url}/reset?pipeline_id={pipeline_id}"
+
+# === Reset status for this pipeline ID ===
 try:
     requests.post(reset_url)
-    print("🔄 Initial status reset to pending.")
+    print(f"🔄 Status reset to pending for pipeline_id: {pipeline_id}")
 except Exception as e:
     print("❌ Failed to reset status:", e)
     sys.exit(1)
@@ -80,7 +84,7 @@ except Exception as e:
     sys.exit(1)
 
 # === Poll for Approval ===
-print("⏳ Waiting for approval (10 minutes max)...")
+print(f"⏳ Waiting for approval (pipeline_id: {pipeline_id}) (10 minutes max)...")
 for i in range(60):  # Poll every 10 seconds (60 × 10s = 10 min)
     try:
         res = requests.get(status_url)
@@ -89,7 +93,7 @@ for i in range(60):  # Poll every 10 seconds (60 × 10s = 10 min)
         status = data.get("status", "").lower()
 
         if status in ["approved", "rejected"]:
-            print(f"🔔 Pipeline {status.upper()} received.")
+            print(f"🔔 Pipeline {status.upper()} received for ID {pipeline_id}.")
 
             # Reset again after response
             try:
