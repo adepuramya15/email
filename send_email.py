@@ -34,35 +34,35 @@ subject = "Action Required: Harness Pipeline Approval"
 
 html_body = f"""
 <html>
-  <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
-    <div style="max-width: 600px; margin: auto; background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px;">
-      <h2 style="color: #333333;">🚀 Pipeline Action Required</h2>
-      <p style="font-size: 15px; color: #444444;">
-        Hello,<br><br>
-        A new pipeline execution is waiting for your response.<br>
-        Please select one of the options below to continue:
+  <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f8ff; padding: 25px;">
+    <div style="max-width: 640px; margin: auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 35px;">
+      <h2 style="color: #4a90e2; text-align: center;">🌟 Approval Needed: Pipeline is on Hold</h2>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">
+        Dear Reviewer,<br><br>
+        Your input is requested to proceed with a pipeline task.<br>
+        Kindly select one of the actions below to continue.
       </p>
 
-      <div style="margin: 30px 0;">
+      <div style="text-align: center; margin: 35px 0;">
         <a href="{approve_url}" 
-           style="padding: 12px 25px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+           style="display: inline-block; padding: 14px 30px; background-color: #00c853; color: white; text-decoration: none; border-radius: 6px; font-size: 16px; margin: 0 10px; font-weight: 600;">
           ✅ Approve
         </a>
-        &nbsp;&nbsp;
         <a href="{reject_url}" 
-           style="padding: 12px 25px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+           style="display: inline-block; padding: 14px 30px; background-color: #d50000; color: white; text-decoration: none; border-radius: 6px; font-size: 16px; margin: 0 10px; font-weight: 600;">
           ❌ Reject
         </a>
       </div>
 
-      <p style="font-size: 14px; color: #666666;">
-        Thank you,<br>
-        <strong>CI/CD Automation Bot</strong>
+      <p style="font-size: 14px; color: #666; text-align: center;">
+        If no action is taken within 10 minutes, the request will timeout automatically.<br><br>
+        <strong>– Automated CI/CD Notification System</strong>
       </p>
     </div>
   </body>
 </html>
 """
+
 
 msg = MIMEMultipart('alternative')
 msg['From'] = smtp_user
