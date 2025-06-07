@@ -94,4 +94,4 @@ for i in range(60):  # Poll every 10 seconds (60 × 10s = 10 min)
 
 # Timeout after 10 minutes
 print("⌛ Timeout reached. No approval received.")
-sys.exit(0)
+sys.exit(1)
