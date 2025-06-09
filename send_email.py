@@ -10,7 +10,7 @@ import uuid
 smtp_user = "yaswanthkumarch2001@gmail.com"
 smtp_password = "uqjcbszfdjfwbsor"  # Use Gmail App Password (no spaces)
 to_email = "ramya@middlewaretalents.com"
-public_url = "https://dfa3-136-232-205-158.ngrok-free.app"  # Your Flask app ngrok URL
+public_url = "https://bd80-136-232-205-158.ngrok-free.app"  # Your Flask app ngrok URL
 
 # === Generate unique pipeline ID ===
 pipeline_id = str(uuid.uuid4())
