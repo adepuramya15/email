@@ -8,7 +8,6 @@ app = Flask(__name__)
 status_file = "approval_status.json"
 lock = threading.Lock()
 
-# === Load or initialize status ===
 def load_status():
     if os.path.exists(status_file):
         try:
@@ -46,14 +45,10 @@ def approve():
     reason = request.form.get("reason", "Approved without comment")
     current = load_status()
     if pipeline_id != current.get("pipeline_id", ""):
-        return render_template_string("""<h2 style="color: #ff9800;">⚠️ Invalid or Expired Approval</h2>""")
+        return render_template_string(expired_template())
     save_status("approved", pipeline_id, reason)
-    print("🔔 Approved. Will reset to pending in 5 minutes...")
     threading.Timer(300.0, lambda: save_status("pending", pipeline_id)).start()
-    return render_template_string("""
-        <h2 style="color: #2e7d32;">🎉 Approval Confirmed</h2>
-        <p>The pipeline has been approved with reason: {{ reason }}</p>
-    """, reason=reason)
+    return render_template_string(success_template("approved", reason))
 
 @app.route('/reject', methods=['POST'])
 def reject():
@@ -61,14 +56,10 @@ def reject():
     reason = request.form.get("reason", "Rejected without comment")
     current = load_status()
     if pipeline_id != current.get("pipeline_id", ""):
-        return render_template_string("""<h2 style="color: #ff9800;">⚠️ Invalid or Expired Rejection</h2>""")
+        return render_template_string(expired_template())
     save_status("rejected", pipeline_id, reason)
-    print("❌ Rejected. Will reset to pending in 5 minutes...")
     threading.Timer(300.0, lambda: save_status("pending", pipeline_id)).start()
-    return render_template_string("""
-        <h2 style="color: #c62828;">❌ Rejection Recorded</h2>
-        <p>The pipeline has been rejected with reason: {{ reason }}</p>
-    """, reason=reason)
+    return render_template_string(success_template("rejected", reason))
 
 @app.route('/status')
 def status():
@@ -89,49 +80,153 @@ def review():
     pipeline_id = request.args.get("pipeline_id", "")
     current = load_status()
     if pipeline_id != current.get("pipeline_id", ""):
-        return render_template_string("<h2 style='color: orange;'>⚠️ Invalid or Expired Link</h2>")
+        return render_template_string(expired_template())
 
-    return render_template_string(f"""
+    return render_template_string(review_template(pipeline_id))
+
+def expired_template():
+    return """
     <html>
-    <head>
-        <title>Pipeline Review</title>
-        <script>
-            function showForm(actionType) {{
-                document.getElementById('approve-form').style.display = 'none';
-                document.getElementById('reject-form').style.display = 'none';
-                if (actionType === 'approve') {{
-                    document.getElementById('approve-form').style.display = 'block';
-                }} else {{
-                    document.getElementById('reject-form').style.display = 'block';
-                }}
-            }}
-        </script>
+    <head><title>Link Expired</title>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #ffe6e6;
+            text-align: center;
+            padding: 100px;
+        }}
+        .card {{
+            background: white;
+            padding: 30px;
+            margin: auto;
+            width: 400px;
+            box-shadow: 0px 4px 10px rgba(255, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 2px solid #ff4d4d;
+        }}
+        h2 {{
+            color: #d32f2f;
+        }}
+    </style>
     </head>
-    <body style="font-family: Arial, sans-serif; background-color: #f0f4f8; text-align: center; padding: 40px;">
-        <h2 style="color: #0d6efd;">🔍 Review Pipeline Request</h2>
-        <p style="font-size: 16px;">Please choose an action below:</p>
-
-        <div style="margin: 20px;">
-            <button onclick="showForm('approve')" style="padding: 12px 24px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px;">✅ Approve</button>
-            <button onclick="showForm('reject')" style="padding: 12px 24px; background-color: #dc3545; color: white; border: none; border-radius: 6px; font-size: 16px;">❌ Reject</button>
-        </div>
-
-        <div id="approve-form" style="display: none; margin-top: 20px;">
-            <form method="post" action="/approve?pipeline_id={pipeline_id}">
-                <textarea name="reason" rows="4" cols="50" placeholder="Enter reason for approval..." required></textarea><br><br>
-                <button type="submit" style="padding: 12px 24px; background-color: #00c853; color: white; border: none; border-radius: 5px; font-size: 16px;">Submit Approval</button>
-            </form>
-        </div>
-
-        <div id="reject-form" style="display: none; margin-top: 20px;">
-            <form method="post" action="/reject?pipeline_id={pipeline_id}">
-                <textarea name="reason" rows="4" cols="50" placeholder="Enter reason for rejection..." required></textarea><br><br>
-                <button type="submit" style="padding: 12px 24px; background-color: #d50000; color: white; border: none; border-radius: 5px; font-size: 16px;">Submit Rejection</button>
-            </form>
+    <body>
+        <div class="card">
+            <h2>⚠️ Link Expired</h2>
+            <p>The approval link you used is no longer valid.</p>
         </div>
     </body>
     </html>
-    """)
+    """
+
+def success_template(status, reason):
+    color = "#2e7d32" if status == "approved" else "#c62828"
+    title = "🎉 Approval Confirmed" if status == "approved" else "❌ Rejection Recorded"
+    return f"""
+    <html>
+    <head>
+        <title>{title}</title>
+        <style>
+            body {{
+                background-color: #f0f4f8;
+                font-family: 'Segoe UI', sans-serif;
+                text-align: center;
+                padding: 100px;
+            }}
+            .card {{
+                background: white;
+                padding: 30px;
+                width: 450px;
+                margin: auto;
+                box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+                border-radius: 12px;
+            }}
+            h2 {{
+                color: {color};
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h2>{title}</h2>
+            <p>The pipeline was <strong>{status}</strong> for the following reason:</p>
+            <blockquote>{reason}</blockquote>
+        </div>
+    </body>
+    </html>
+    """
+
+def review_template(pipeline_id):
+    return f"""
+    <html>
+    <head>
+        <title>Review Pipeline</title>
+        <style>
+            body {{
+                font-family: 'Segoe UI', sans-serif;
+                background-color: #f9fbfd;
+                text-align: center;
+                padding: 60px;
+            }}
+            .card {{
+                background: #fff;
+                padding: 30px;
+                margin: auto;
+                width: 520px;
+                box-shadow: 0px 5px 15px rgba(0,0,0,0.1);
+                border-radius: 16px;
+            }}
+            button {{
+                padding: 10px 25px;
+                font-size: 16px;
+                margin: 10px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+            }}
+            .approve-btn {{ background-color: #28a745; color: white; }}
+            .reject-btn {{ background-color: #dc3545; color: white; }}
+            .submit-btn {{ padding: 12px 30px; margin-top: 15px; }}
+            textarea {{
+                width: 90%;
+                border-radius: 8px;
+                padding: 10px;
+                font-size: 14px;
+                margin-top: 10px;
+            }}
+        </style>
+        <script>
+            function showForm(type) {{
+                document.getElementById('approve-form').style.display = 'none';
+                document.getElementById('reject-form').style.display = 'none';
+                document.getElementById(type + '-form').style.display = 'block';
+            }}
+        </script>
+    </head>
+    <body>
+        <div class="card">
+            <h2 style="color: #0d6efd;">🔍 Review Pipeline Request</h2>
+            <p>Choose to approve or reject the pipeline:</p>
+
+            <button class="approve-btn" onclick="showForm('approve')">✅ Approve</button>
+            <button class="reject-btn" onclick="showForm('reject')">❌ Reject</button>
+
+            <div id="approve-form" style="display:none;">
+                <form method="post" action="/approve?pipeline_id={pipeline_id}">
+                    <textarea name="reason" rows="4" placeholder="Reason for approval..." required></textarea><br>
+                    <button type="submit" class="submit-btn approve-btn">Submit Approval</button>
+                </form>
+            </div>
+
+            <div id="reject-form" style="display:none;">
+                <form method="post" action="/reject?pipeline_id={pipeline_id}">
+                    <textarea name="reason" rows="4" placeholder="Reason for rejection..." required></textarea><br>
+                    <button type="submit" class="submit-btn reject-btn">Submit Rejection</button>
+                </form>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
 
 if __name__ == "__main__":
     save_status("pending", "")
