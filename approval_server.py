@@ -46,10 +46,7 @@ def approve():
     reason = request.form.get("reason", "Approved without comment")
     current = load_status()
     if pipeline_id != current.get("pipeline_id", ""):
-        return render_template_string("""
-            <h2 style="color: #ff9800;">⚠️ Invalid or Expired Approval</h2>
-            <p>This approval link has either expired or does not match the current request.</p>
-        """)
+        return render_template_string("""<h2 style="color: #ff9800;">⚠️ Invalid or Expired Approval</h2>""")
     save_status("approved", pipeline_id, reason)
     print("🔔 Approved. Will reset to pending in 5 minutes...")
     threading.Timer(300.0, lambda: save_status("pending", pipeline_id)).start()
@@ -64,10 +61,7 @@ def reject():
     reason = request.form.get("reason", "Rejected without comment")
     current = load_status()
     if pipeline_id != current.get("pipeline_id", ""):
-        return render_template_string("""
-            <h2 style="color: #ff9800;">⚠️ Invalid or Expired Rejection</h2>
-            <p>This rejection link has either expired or is no longer valid.</p>
-        """)
+        return render_template_string("""<h2 style="color: #ff9800;">⚠️ Invalid or Expired Rejection</h2>""")
     save_status("rejected", pipeline_id, reason)
     print("❌ Rejected. Will reset to pending in 5 minutes...")
     threading.Timer(300.0, lambda: save_status("pending", pipeline_id)).start()
@@ -95,28 +89,49 @@ def review():
     pipeline_id = request.args.get("pipeline_id", "")
     current = load_status()
     if pipeline_id != current.get("pipeline_id", ""):
-        return render_template_string("""
-            <h2 style="color: #ff9800;">⚠️ Invalid or Expired Link</h2>
-            <p>This review link is invalid or expired.</p>
-        """)
+        return render_template_string("<h2 style='color: orange;'>⚠️ Invalid or Expired Link</h2>")
 
-    approve_action = f"/approve?pipeline_id={pipeline_id}"
-    reject_action = f"/reject?pipeline_id={pipeline_id}"
-
+    # Colorful review page with JS-based conditional display
     return render_template_string(f"""
-        <html>
-        <body style="font-family: sans-serif; text-align: center; padding: 40px;">
-            <h2 style="color: #4a90e2;">Review Required for Pipeline</h2>
-            <form method="post" action="{approve_action}" style="margin-bottom: 20px;">
+    <html>
+    <head>
+        <title>Pipeline Review</title>
+        <script>
+            function showForm(actionType) {{
+                document.getElementById('approve-form').style.display = 'none';
+                document.getElementById('reject-form').style.display = 'none';
+                if (actionType === 'approve') {{
+                    document.getElementById('approve-form').style.display = 'block';
+                }} else {{
+                    document.getElementById('reject-form').style.display = 'block';
+                }}
+            }}
+        </script>
+    </head>
+    <body style="font-family: Arial, sans-serif; background-color: #f0f4f8; text-align: center; padding: 40px;">
+        <h2 style="color: #0d6efd;">🔍 Review Pipeline Request</h2>
+        <p style="font-size: 16px;">Please choose an action below:</p>
+
+        <div style="margin: 20px;">
+            <button onclick="showForm('approve')" style="padding: 12px 24px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px;">✅ Approve</button>
+            <button onclick="showForm('reject')" style="padding: 12px 24px; background-color: #dc3545; color: white; border: none; border-radius: 6px; font-size: 16px;">❌ Reject</button>
+        </div>
+
+        <div id="approve-form" style="display: none; margin-top: 20px;">
+            <form method="post" action="/approve?pipeline_id={pipeline_id}">
                 <textarea name="reason" rows="4" cols="50" placeholder="Enter reason for approval..." required></textarea><br><br>
-                <button type="submit" style="padding: 12px 24px; background-color: #00c853; color: white; border: none; border-radius: 5px; font-size: 16px;">✅ Approve</button>
+                <button type="submit" style="padding: 12px 24px; background-color: #00c853; color: white; border: none; border-radius: 5px; font-size: 16px;">Submit Approval</button>
             </form>
-            <form method="post" action="{reject_action}">
+        </div>
+
+        <div id="reject-form" style="display: none; margin-top: 20px;">
+            <form method="post" action="/reject?pipeline_id={pipeline_id}">
                 <textarea name="reason" rows="4" cols="50" placeholder="Enter reason for rejection..." required></textarea><br><br>
-                <button type="submit" style="padding: 12px 24px; background-color: #d50000; color: white; border: none; border-radius: 5px; font-size: 16px;">❌ Reject</button>
+                <button type="submit" style="padding: 12px 24px; background-color: #d50000; color: white; border: none; border-radius: 5px; font-size: 16px;">Submit Rejection</button>
             </form>
-        </body>
-        </html>
+        </div>
+    </body>
+    </html>
     """)
 
 if __name__ == "__main__":

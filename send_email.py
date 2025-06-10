@@ -8,9 +8,9 @@ import uuid
 
 # === CONFIGURATION ===
 smtp_user = "yaswanthkumarch2001@gmail.com"
-smtp_password = "uqjcbszfdjfwbsor"  # Use Gmail App Password
+smtp_password = "uqjcbszfdjfwbsor"  # Gmail App Password
 to_email = "ramya@middlewaretalents.com"
-public_url = "https://3f41-136-232-205-158.ngrok-free.app"  # Your Flask app public URL
+public_url = "https://3f41-136-232-205-158.ngrok-free.app"  # Flask public URL
 
 # === Generate unique pipeline ID ===
 pipeline_id = str(uuid.uuid4())
@@ -18,9 +18,10 @@ pipeline_id = str(uuid.uuid4())
 # === Construct endpoint URLs ===
 status_url = f"{public_url}/status?pipeline_id={pipeline_id}"
 reset_url = f"{public_url}/reset?pipeline_id={pipeline_id}"
-review_url = f"{public_url}/review?pipeline_id={pipeline_id}"
+approve_url = f"{public_url}/approve?pipeline_id={pipeline_id}"
+reject_url = f"{public_url}/reject?pipeline_id={pipeline_id}"
 
-# === Reset status for this pipeline ID ===
+# === Reset status ===
 try:
     requests.post(reset_url)
     print(f"🔄 Status reset to pending for pipeline_id: {pipeline_id}")
@@ -28,30 +29,35 @@ except Exception as e:
     print("❌ Failed to reset status:", e)
     sys.exit(1)
 
-# === Compose the HTML Email ===
-subject = "Action Required: Pipeline Review Needed"
+# === Compose the colorful HTML Email with Approve/Reject buttons ===
+subject = "🚀 Action Required: Pipeline Approval Needed"
 
 html_body = f"""
 <html>
-  <body style="font-family: Arial; background-color: #f0f8ff; padding: 25px;">
-    <div style="max-width: 640px; margin: auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 35px;">
-      <h2 style="color: #4a90e2; text-align: center;">🔍 Review Pipeline Request</h2>
-      <p style="font-size: 16px; color: #333; line-height: 1.6;">
-        Dear Reviewer,<br><br>
-        A pipeline task is waiting for your action.<br><br>
-        Click the button below to review and take action.
+  <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fbfc; padding: 20px;">
+    <div style="max-width: 650px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); padding: 35px;">
+      <h2 style="color: #0d6efd; text-align: center;">🧪 Review & Approve Pipeline Task</h2>
+      <p style="font-size: 16px; color: #333333; line-height: 1.5;">
+        Hello Reviewer,<br><br>
+        A pipeline task requires your attention.<br>
+        Please choose one of the options below to approve or reject with feedback.
       </p>
 
-      <div style="text-align: center; margin: 35px 0;">
-        <a href="{review_url}" 
-           style="display: inline-block; padding: 14px 30px; background-color: #007bff; color: white; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
-          🔗 Review Request
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{approve_url}" 
+           style="margin-right: 15px; display: inline-block; padding: 14px 28px; background-color: #28a745; color: white; text-decoration: none; border-radius: 8px; font-size: 16px;">
+          ✅ Approve
+        </a>
+
+        <a href="{reject_url}" 
+           style="display: inline-block; padding: 14px 28px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 8px; font-size: 16px;">
+          ❌ Reject
         </a>
       </div>
 
-      <p style="font-size: 14px; color: #666; text-align: center;">
-        This link is valid for one request and will expire after use.<br><br>
-        <strong>– Automated CI/CD Notification System</strong>
+      <p style="font-size: 14px; color: #888888; text-align: center;">
+        This request will expire after the first response is submitted.<br>
+        <strong>– CI/CD Notification System</strong>
       </p>
     </div>
   </body>
@@ -80,7 +86,7 @@ except Exception as e:
 
 # === Poll for Approval Status ===
 print(f"⏳ Waiting for approval (pipeline_id: {pipeline_id}) (10 minutes max)...")
-for i in range(60):  # Poll every 10 seconds (10 minutes)
+for i in range(60):  # 60 polls × 10 seconds = 10 minutes
     try:
         res = requests.get(status_url)
         res.raise_for_status()
