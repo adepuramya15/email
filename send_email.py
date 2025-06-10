@@ -23,7 +23,7 @@ status_url = f"{public_url}/status?pipeline_id={pipeline_id}"
 reset_url = f"{public_url}/reset?pipeline_id={pipeline_id}"
 review_url = f"{public_url}/review?pipeline_id={pipeline_id}"
 
-# === Reset status ===
+# === Reset status to pending ===
 try:
     requests.post(reset_url)
     print(f"🧹 Status reset to pending for pipeline_id: {pipeline_id}")
@@ -33,7 +33,6 @@ except Exception as e:
 
 # === Compose Email ===
 subject = "🚀 Action Required: Pipeline Approval Needed"
-
 html_body = f"""
 <html>
   <body style="font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; padding: 20px;">
@@ -90,7 +89,14 @@ for i in range(polls):
     try:
         res = requests.get(status_url)
         res.raise_for_status()
-        data = res.json()
+
+        try:
+            data = res.json()
+        except ValueError:
+            print(f"⚠️ Poll {i+1}: Invalid JSON response received (possibly expired or malformed): {res.text[:100]}")
+            time.sleep(poll_interval)
+            continue
+
         status = data.get("status", "").lower()
         reason = data.get("reason", "No reason provided")
 

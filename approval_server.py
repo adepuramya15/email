@@ -14,7 +14,7 @@ def load_status():
             with open(status_file, "r") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"⚠️ Failed to read status: {e}")
+            print(f"\u26a0\ufe0f Failed to read status: {e}")
     return {"status": "pending", "pipeline_id": "", "reason": ""}
 
 def save_status(new_status, pipeline_id=None, reason=""):
@@ -31,13 +31,13 @@ def save_status(new_status, pipeline_id=None, reason=""):
                 status_data["pipeline_id"] = current.get("pipeline_id", "")
             with open(status_file, "w") as f:
                 json.dump(status_data, f)
-            print(f"🔁 Status updated to: {status_data}")
+            print(f"\ud83d\udd01 Status updated to: {status_data}")
         except Exception as e:
-            print(f"❌ Failed to write status: {e}")
+            print(f"\u274c Failed to write status: {e}")
 
 @app.route('/')
 def index():
-    return "🟢 Approval system is active and awaiting instructions."
+    return "\ud83d\udfe2 Approval system is active and awaiting instructions."
 
 @app.route('/approve', methods=['POST'])
 def approve():
@@ -45,7 +45,7 @@ def approve():
     reason = request.form.get("reason", "Approved without comment")
     current = load_status()
     if pipeline_id != current.get("pipeline_id", ""):
-        return render_template_string(expired_template())
+        return render_template_string(expired_template()), 400
     save_status("approved", pipeline_id, reason)
     threading.Timer(300.0, lambda: save_status("pending", pipeline_id)).start()
     return render_template_string(success_template("approved", reason))
@@ -56,7 +56,7 @@ def reject():
     reason = request.form.get("reason", "Rejected without comment")
     current = load_status()
     if pipeline_id != current.get("pipeline_id", ""):
-        return render_template_string(expired_template())
+        return render_template_string(expired_template()), 400
     save_status("rejected", pipeline_id, reason)
     threading.Timer(300.0, lambda: save_status("pending", pipeline_id)).start()
     return render_template_string(success_template("rejected", reason))
@@ -66,22 +66,21 @@ def status():
     expected_id = request.args.get("pipeline_id", "")
     current = load_status()
     if current.get("pipeline_id", "") != expected_id:
-        return jsonify({"status": "pending", "reason": ""})
+        return jsonify({"status": "expired", "reason": "This link is invalid or expired."}), 400
     return jsonify({"status": current["status"], "reason": current.get("reason", "")})
 
 @app.route('/reset', methods=['POST'])
 def reset():
     pipeline_id = request.args.get("pipeline_id", "")
     save_status("pending", pipeline_id, "")
-    return "🔁 Pipeline status reset to pending.", 200
+    return "\ud83d\udd01 Pipeline status reset to pending.", 200
 
 @app.route('/review')
 def review():
     pipeline_id = request.args.get("pipeline_id", "")
     current = load_status()
     if pipeline_id != current.get("pipeline_id", ""):
-        return render_template_string(expired_template())
-
+        return render_template_string(expired_template()), 400
     return render_template_string(review_template(pipeline_id))
 
 def expired_template():
@@ -89,13 +88,13 @@ def expired_template():
     <html>
     <head><title>Link Expired</title>
     <style>
-        body {{
+        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #ffe6e6;
             text-align: center;
             padding: 100px;
-        }}
-        .card {{
+        }
+        .card {
             background: white;
             padding: 30px;
             margin: auto;
@@ -103,10 +102,10 @@ def expired_template():
             box-shadow: 0px 4px 10px rgba(255, 0, 0, 0.3);
             border-radius: 12px;
             border: 2px solid #ff4d4d;
-        }}
-        h2 {{
+        }
+        h2 {
             color: #d32f2f;
-        }}
+        }
     </style>
     </head>
     <body>
