@@ -86,9 +86,11 @@ for i in range(60):  # Poll every 10 seconds (10 minutes)
         res.raise_for_status()
         data = res.json()
         status = data.get("status", "").lower()
+        reason = data.get("reason", "No reason provided")
 
         if status in ["approved", "rejected"]:
             print(f"🔔 Pipeline {status.upper()} received for ID {pipeline_id}.")
+            print(f"📄 Reason: {reason}")
 
             try:
                 requests.post(reset_url)
