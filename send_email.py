@@ -18,8 +18,7 @@ pipeline_id = str(uuid.uuid4())
 # === Construct endpoint URLs ===
 status_url = f"{public_url}/status?pipeline_id={pipeline_id}"
 reset_url = f"{public_url}/reset?pipeline_id={pipeline_id}"
-approve_url = f"{public_url}/approve?pipeline_id={pipeline_id}"
-reject_url = f"{public_url}/reject?pipeline_id={pipeline_id}"
+review_url = f"{public_url}/review?pipeline_id={pipeline_id}"
 
 # === Reset status ===
 try:
@@ -29,35 +28,27 @@ except Exception as e:
     print("❌ Failed to reset status:", e)
     sys.exit(1)
 
-# === Compose the colorful HTML Email with Approve/Reject buttons ===
+# === Compose the Email with Review Button ===
 subject = "🚀 Action Required: Pipeline Approval Needed"
 
 html_body = f"""
 <html>
-  <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fbfc; padding: 20px;">
-    <div style="max-width: 650px; margin: auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); padding: 35px;">
-      <h2 style="color: #0d6efd; text-align: center;">🧪 Review & Approve Pipeline Task</h2>
-      <p style="font-size: 16px; color: #333333; line-height: 1.5;">
-        Hello Reviewer,<br><br>
-        A pipeline task requires your attention.<br>
-        Please choose one of the options below to approve or reject with feedback.
+  <body style="font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f1f4f6; padding: 25px;">
+    <div style="max-width: 640px; margin: auto; background: #fff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); padding: 35px;">
+      <h2 style="color: #007bff; text-align: center;">🛠️ Pipeline Action Required</h2>
+      <p style="font-size: 16px; color: #333;">
+        Dear Reviewer,<br><br>
+        Please review the pipeline task and take necessary action by clicking below.
       </p>
-
       <div style="text-align: center; margin: 30px 0;">
-        <a href="{approve_url}" 
-           style="margin-right: 15px; display: inline-block; padding: 14px 28px; background-color: #28a745; color: white; text-decoration: none; border-radius: 8px; font-size: 16px;">
-          ✅ Approve
-        </a>
-
-        <a href="{reject_url}" 
-           style="display: inline-block; padding: 14px 28px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 8px; font-size: 16px;">
-          ❌ Reject
+        <a href="{review_url}" 
+           style="padding: 14px 30px; background-color: #6f42c1; color: white; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
+          🔎 Review Request
         </a>
       </div>
-
-      <p style="font-size: 14px; color: #888888; text-align: center;">
-        This request will expire after the first response is submitted.<br>
-        <strong>– CI/CD Notification System</strong>
+      <p style="font-size: 13px; color: #888; text-align: center;">
+        This request is valid only for one-time review.<br><br>
+        <strong>– CI/CD Notification</strong>
       </p>
     </div>
   </body>

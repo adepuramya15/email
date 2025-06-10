@@ -91,7 +91,6 @@ def review():
     if pipeline_id != current.get("pipeline_id", ""):
         return render_template_string("<h2 style='color: orange;'>⚠️ Invalid or Expired Link</h2>")
 
-    # Colorful review page with JS-based conditional display
     return render_template_string(f"""
     <html>
     <head>
