@@ -10,7 +10,7 @@ import uuid
 smtp_user = "yaswanthkumarch2001@gmail.com"
 smtp_password = "uqjcbszfdjfwbsor"  # Use Gmail App Password (no spaces)
 to_email = "ramya@middlewaretalents.com"
-public_url = "https://bd80-136-232-205-158.ngrok-free.app"  # Your Flask app ngrok URL
+public_url = "https://3f41-136-232-205-158.ngrok-free.app"  # Your Flask app ngrok URL
 
 # === Generate unique pipeline ID ===
 pipeline_id = str(uuid.uuid4())
@@ -34,34 +34,27 @@ subject = "Action Required: Harness Pipeline Approval"
 
 html_body = f"""
 <html>
-  <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f8ff; padding: 25px;">
-    <div style="max-width: 640px; margin: auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 35px;">
-      <h2 style="color: #4a90e2; text-align: center;">🌟 Approval Needed: Pipeline is on Hold</h2>
-      <p style="font-size: 16px; color: #333; line-height: 1.6;">
-        Dear Reviewer,<br><br>
-        Your input is requested to proceed with a pipeline task.<br>
-        Kindly select one of the actions below to continue.
+  <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e3f2fd; padding: 25px;">
+    <div style="max-width: 640px; margin: auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px;">
+      <h2 style="color: #1565c0; text-align: center;">🌐 Pipeline Approval Request</h2>
+      <p style="font-size: 16px; color: #333;">
+        Hello,<br><br>
+        A pipeline is currently waiting for your input.<br><br>
+        Please click one of the following links to proceed:
       </p>
-
-      <div style="text-align: center; margin: 35px 0;">
-        <a href="{approve_url}" 
-           style="display: inline-block; padding: 14px 30px; background-color: #00c853; color: white; text-decoration: none; border-radius: 6px; font-size: 16px; margin: 0 10px; font-weight: 600;">
-          ✅ Approve
-        </a>
-        <a href="{reject_url}" 
-           style="display: inline-block; padding: 14px 30px; background-color: #d50000; color: white; text-decoration: none; border-radius: 6px; font-size: 16px; margin: 0 10px; font-weight: 600;">
-          ❌ Reject
-        </a>
-      </div>
-
-      <p style="font-size: 14px; color: #666; text-align: center;">
-        If no action is taken within 10 minutes, the request will timeout automatically.<br><br>
-        <strong>– Automated CI/CD Notification System</strong>
+      <ul style="font-size: 16px; color: #0d47a1; line-height: 2;">
+        <li><a href="{approve_url}" style="color: #2e7d32; font-weight: bold;">✅ Approve Pipeline</a></li>
+        <li><a href="{reject_url}" style="color: #c62828; font-weight: bold;">❌ Reject Pipeline</a></li>
+      </ul>
+      <p style="font-size: 14px; color: #555; margin-top: 30px; text-align: center;">
+        This request will timeout after 10 minutes if no action is taken.<br>
+        <strong>– Automated CI/CD System</strong>
       </p>
     </div>
   </body>
 </html>
 """
+
 
 
 msg = MIMEMultipart('alternative')
