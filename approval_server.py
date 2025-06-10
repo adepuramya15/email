@@ -85,6 +85,32 @@ def reset():
     save_status("pending", pipeline_id)
     return "🔁 Pipeline status reset to pending.", 200
 
+@app.route('/review')
+def review():
+    pipeline_id = request.args.get("pipeline_id", "")
+    current = load_status()
+    if pipeline_id != current.get("pipeline_id", ""):
+        return render_template_string("""
+            <h2 style="color: #ff9800;">⚠️ Invalid or Expired Link</h2>
+            <p>This review link is invalid or expired.</p>
+        """)
+
+    approve_link = f"/approve?pipeline_id={pipeline_id}"
+    reject_link = f"/reject?pipeline_id={pipeline_id}"
+
+    return render_template_string(f"""
+        <html>
+        <body style="font-family: sans-serif; text-align: center; padding: 40px;">
+            <h2 style="color: #4a90e2;">Review Required for Pipeline</h2>
+            <p>Please choose an action:</p>
+            <div style="margin-top: 30px;">
+                <a href="{approve_link}" style="padding: 12px 24px; background-color: #00c853; color: white; text-decoration: none; border-radius: 5px; font-size: 16px;">✅ Approve</a>
+                <a href="{reject_link}" style="padding: 12px 24px; background-color: #d50000; color: white; text-decoration: none; border-radius: 5px; font-size: 16px; margin-left: 20px;">❌ Reject</a>
+            </div>
+        </body>
+        </html>
+    """)
+
 if __name__ == "__main__":
     save_status("pending", "")
     app.run(host="0.0.0.0", port=5000)

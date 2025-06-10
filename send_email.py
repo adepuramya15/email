@@ -8,18 +8,17 @@ import uuid
 
 # === CONFIGURATION ===
 smtp_user = "yaswanthkumarch2001@gmail.com"
-smtp_password = "uqjcbszfdjfwbsor"  # Use Gmail App Password (no spaces)
+smtp_password = "uqjcbszfdjfwbsor"  # Use Gmail App Password
 to_email = "ramya@middlewaretalents.com"
-public_url = "https://3f41-136-232-205-158.ngrok-free.app"  # Your Flask app ngrok URL
+public_url = "https://3f41-136-232-205-158.ngrok-free.app"  # Your Flask app public URL
 
 # === Generate unique pipeline ID ===
 pipeline_id = str(uuid.uuid4())
 
-# Flask endpoint URLs with pipeline_id query param
+# === Construct endpoint URLs ===
 status_url = f"{public_url}/status?pipeline_id={pipeline_id}"
-approve_url = f"{public_url}/approve?pipeline_id={pipeline_id}"
-reject_url = f"{public_url}/reject?pipeline_id={pipeline_id}"
 reset_url = f"{public_url}/reset?pipeline_id={pipeline_id}"
+review_url = f"{public_url}/review?pipeline_id={pipeline_id}"
 
 # === Reset status for this pipeline ID ===
 try:
@@ -29,34 +28,37 @@ except Exception as e:
     print("❌ Failed to reset status:", e)
     sys.exit(1)
 
-# === Compose the email ===
-subject = "Action Required: Harness Pipeline Approval"
+# === Compose the HTML Email ===
+subject = "Action Required: Pipeline Review Needed"
 
 html_body = f"""
 <html>
-  <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e3f2fd; padding: 25px;">
-    <div style="max-width: 640px; margin: auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px;">
-      <h2 style="color: #1565c0; text-align: center;">🌐 Pipeline Approval Request</h2>
-      <p style="font-size: 16px; color: #333;">
-        Hello,<br><br>
-        A pipeline is currently waiting for your input.<br><br>
-        Please click one of the following links to proceed:
+  <body style="font-family: Arial; background-color: #f0f8ff; padding: 25px;">
+    <div style="max-width: 640px; margin: auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 35px;">
+      <h2 style="color: #4a90e2; text-align: center;">🔍 Review Pipeline Request</h2>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">
+        Dear Reviewer,<br><br>
+        A pipeline task is waiting for your action.<br><br>
+        Click the button below to review and take action.
       </p>
-      <ul style="font-size: 16px; color: #0d47a1; line-height: 2;">
-        <li><a href="{approve_url}" style="color: #2e7d32; font-weight: bold;">✅ Approve Pipeline</a></li>
-        <li><a href="{reject_url}" style="color: #c62828; font-weight: bold;">❌ Reject Pipeline</a></li>
-      </ul>
-      <p style="font-size: 14px; color: #555; margin-top: 30px; text-align: center;">
-        This request will timeout after 10 minutes if no action is taken.<br>
-        <strong>– Automated CI/CD System</strong>
+
+      <div style="text-align: center; margin: 35px 0;">
+        <a href="{review_url}" 
+           style="display: inline-block; padding: 14px 30px; background-color: #007bff; color: white; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
+          🔗 Review Request
+        </a>
+      </div>
+
+      <p style="font-size: 14px; color: #666; text-align: center;">
+        This link is valid for one request and will expire after use.<br><br>
+        <strong>– Automated CI/CD Notification System</strong>
       </p>
     </div>
   </body>
 </html>
 """
 
-
-
+# === Build Email Message ===
 msg = MIMEMultipart('alternative')
 msg['From'] = smtp_user
 msg['To'] = to_email
@@ -76,9 +78,9 @@ except Exception as e:
     print("❌ Failed to send email:", e)
     sys.exit(1)
 
-# === Poll for Approval ===
+# === Poll for Approval Status ===
 print(f"⏳ Waiting for approval (pipeline_id: {pipeline_id}) (10 minutes max)...")
-for i in range(60):  # Poll every 10 seconds (60 × 10s = 10 min)
+for i in range(60):  # Poll every 10 seconds (10 minutes)
     try:
         res = requests.get(status_url)
         res.raise_for_status()
@@ -88,7 +90,6 @@ for i in range(60):  # Poll every 10 seconds (60 × 10s = 10 min)
         if status in ["approved", "rejected"]:
             print(f"🔔 Pipeline {status.upper()} received for ID {pipeline_id}.")
 
-            # Reset again after response
             try:
                 requests.post(reset_url)
                 print("🔄 Status reset to pending.")
@@ -108,6 +109,6 @@ for i in range(60):  # Poll every 10 seconds (60 × 10s = 10 min)
 
     time.sleep(10)
 
-# Timeout after 10 minutes
+# Timeout handling
 print("⌛ Timeout reached. No approval received.")
 sys.exit(1)
