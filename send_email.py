@@ -10,7 +10,7 @@ import uuid
 smtp_user = "yaswanthkumarch2001@gmail.com"
 smtp_password = "uqjcbszfdjfwbsor"  # Gmail App Password
 to_email = "ramya@middlewaretalents.com"
-public_url = "https://3f41-136-232-205-158.ngrok-free.app"  # Flask public URL
+public_url = "https://f0a7-136-232-205-158.ngrok-free.app"  # Flask public URL
 timeout_minutes = 10
 poll_interval = 10  # in seconds
 
